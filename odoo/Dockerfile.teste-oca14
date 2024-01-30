@@ -1,0 +1,138 @@
+# syntax=docker/dockerfile:1.4
+
+FROM ubuntu:22.04 AS build-odoo
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+## Instala python-3.8 ##
+
+WORKDIR /opt
+
+RUN echo "#!/bin/bash\nexit 0" > /usr/sbin/policy-rc.d \
+    && apt-get update && apt-get upgrade\
+    && apt-get install -y \
+    software-properties-common \
+    # gpg \
+    # sudo \
+    && add-apt-repository ppa:deadsnakes/ppa -y \
+    && apt-get update && apt-get upgrade\
+    && apt-get install -y --no-install-recommends \
+    python3.9 \
+    python3.9-dev \
+    python3.9-venv \
+    python3-pip \
+    libxml2-dev \
+    libxslt1-dev \
+    libevent-dev \
+    libsasl2-dev \
+    libldap2-dev \
+    libpq-dev \
+    libjpeg-dev \
+    libtiff5-dev \
+    libjpeg8-dev \
+    libopenjp2-7-dev \
+    zlib1g-dev \
+    libfreetype6-dev \
+    liblcms2-dev \
+    libwebp-dev \
+    libharfbuzz-dev \
+    libfribidi-dev \
+    libxcb1-dev \
+    build-essential \
+## Ferramentas ##
+    gcc \
+    g++ \
+    unzip \
+    curl \
+    gettext-base \
+    swig \
+#    locales \
+#    supervisor \
+#    git
+#    openssh-client \ 
+## Dependências da Localização Brasileira ##
+    # libssl-dev \
+    # libxmlsec1-dev \
+    # python3-openssl \
+    # python3-cffi \
+## limpa intalação dependências apt ##
+    && apt-get autopurge -y \
+    && apt-get autoremove -y \
+    && apt-get autoclean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* 
+## Cria usuário e define ambiente virtual
+RUN groupadd --gid 1000 yottc \
+    && useradd -md /odoo -r -s /bin/bash --uid 1000 yottc -g 1000 \
+    && chown -R yottc.yottc /odoo/
+USER yottc
+WORKDIR /odoo
+ENV VIRTUAL_ENV=/odoo/venv
+RUN python3.9 -m venv ${VIRTUAL_ENV}
+ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
+RUN python3.9 -m ensurepip \
+    && pip3 install --upgrade pip \
+    && pip3 install wheel
+COPY ./oca-requirements.txt odoo-requirements.txt ./
+RUN pip3 install --no-cache-dir -r odoo-requirements.txt \
+    && pip3 install --no-cache-dir -r oca-requirements.txt \
+    && find -name '*.pyc' -type f -delete
+
+## build runner-image ##
+
+FROM ubuntu:22.04 AS run-odoo
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV LC_ALL=pt_BR.UTF-8
+WORKDIR /opt
+## Avoid ERROR: invoke-rc.d: policy-rc.d deined execution of start ##
+## Instala dependencias-apt ##
+RUN echo "#!/bin/bash\nexit 0" > /usr/sbin/policy-rc.d \
+    && apt-get update && apt-get install -y \
+    software-properties-common \
+    # gpg \
+    # sudo \
+    && add-apt-repository ppa:deadsnakes/ppa -y \
+    && apt-get update && apt-get upgrade\
+    && apt-get install -y --no-install-recommends \
+    python3.9-venv \
+    python3-pip \
+    wget \
+    publicsuffix \
+    ca-certificates \
+    locales \
+    gnupg1 \
+    gnupg2 \
+    gettext-base \
+    curl \
+    swig \
+    && locale-gen en_US en_US.UTF-8 pt_BR pt_BR.UTF-8 \
+    && dpkg-reconfigure locales \ 
+## Instala postgrsql-client-13 ##
+    && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | tee  /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update && apt-get install -y --no-install-recommends postgresql-client-13 \
+    && wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb \
+    && apt-get install -y ./libssl1.1_1.1.1f-1ubuntu2_amd64.deb \
+    && wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb \
+    && apt-get install -y --no-install-recommends ./wkhtmltox_0.12.6-1.focal_amd64.deb \
+## Instala node     
+    && curl -sL https://deb.nodesource.com/setup_lts.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g less && npm cache clean --force \
+## Limpa instalação Python-3.8 ##
+    && rm -rf /opt/*.* \
+    && apt-get autopurge -y \
+    && apt-get autoremove -y \
+    && apt-get autoclean \
+    && rm -rf /var/lib/apt/lists/* /tmp/*
+## Cria usuário e define ambiente virtual
+ENV LANG C.UTF-8
+RUN groupadd --gid 1000 yottc \
+    && useradd -md /odoo -r -s /bin/bash --uid 1000 yottc -g 1000 \
+    && chown -R yottc.yottc /odoo/
+USER yottc
+WORKDIR /odoo
+ENV VIRTUAL_ENV=/odoo/venv
+RUN python3.9 -m venv ${VIRTUAL_ENV}
+ENV PATH="${VIRTUAL_ENV}/bin:$PATH"      
+COPY --from=build-odoo ${VIRTUAL_ENV} ${VIRTUAL_ENV}

@@ -1,0 +1,42 @@
+version: '3.9'
+services:
+  odooprod:
+    stdin_open: true
+    tty: true
+    container_name: lecprod15
+    image: yottc/odoo:prod
+    network_mode: host
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+      target: runner-odoo
+#      networks:
+#       - host
+    ports:
+      - "8070:8070"
+#    depends_on:
+#      - postgres_prod 
+    env_file:
+      - odooprod.env
+    volumes:
+      - ./prod/filestore:/lecodoo/filestore:rw
+      - ./prod/src:/lecodoo/src/:rw
+      - ./prod/conf:/lecodoo/conf:rw
+      - ./prod/logs:/lecodoo/logs:rw
+#    user: "${UID}:${GID}"  
+#  postgres_prod:
+#     stdin_open: true
+#     tty: true
+#    container_name: postgres_prod
+#    image: postgres:13
+#    env_file:
+#      - pg_prod.env
+#    volumes:
+#      - ./lec_pg_data:/var/lib/postgresql/data
+#    ports:
+#      - "15432:5432"
+    # user: "${UID}:${GID}"      
+# networks:
+#   odoo_net:
+#     name:
+#      odoo_net

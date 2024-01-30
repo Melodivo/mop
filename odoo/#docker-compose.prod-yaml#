@@ -1,0 +1,41 @@
+version: '3.9'
+services:
+  odoo:
+    stdin_open: true
+    tty: true
+    container_name: prodlec15
+    image: yottc/odoo:15
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+      target: runner-odoo
+    # networks:
+    #   - odoo_net
+    ports:
+      - "8070:8069"
+    depends_on:
+      - postgres 
+    env_file:
+      - odoo.env
+    volumes:
+      - ./15/filestore:/odoo/filestore:rw
+      - ./15/src:/odoo/src/:rw
+      - ./15/conf:/odoo/conf:rw
+      - ./15/logs:/odoo/logs:rw
+#    user: "${UID}:${GID}"  
+  postgres:
+#     stdin_open: true
+#     tty: true
+    container_name: postgres
+    image: postgres:13
+    env_file:
+      - pg_env
+     volumes:
+      - ./pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    # user: "${UID}:${GID}"      
+# networks:
+#   odoo_net:
+#     name:
+#      odoo_net

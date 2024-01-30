@@ -1,0 +1,5 @@
+# postgresql environments variables
+POSTGRES_DB=postgres
+POSTGRES_PASSWORD=yottc
+POSTGRES_USER=yottc
+PGDATA=/var/lib/postgresql/data/runboat14

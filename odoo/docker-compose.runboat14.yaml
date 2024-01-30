@@ -1,0 +1,38 @@
+version: '3.9'
+services:
+  odoo:
+    stdin_open: true
+    tty: true
+    container_name: runboat14-oca
+    image: melodivo/docker-runboat-oca:14.0
+    build:
+      context: .
+      dockerfile: Dockerfile.teste-runboat14
+      target: run-odoo
+    networks:
+      - odoo_net
+    ports:
+      - "8069:8069"
+    depends_on:
+      - postgres-runboat14
+    env_file:
+      - odoo.env
+    volumes:
+      - ./runboat14/filestore:/odoo/filestore:rw
+      - ./runboat14/src:/odoo/src/:rw
+      - ./runboat14/conf:/odoo/conf:rw
+      - ./runboat14/logs:/odoo/logs:rw
+  postgres-runboat14:
+    container_name: postgres-runboat14
+    image: postgres:12
+    env_file:
+      - pg_env
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - odoo_net
+networks:
+  odoo_net:
+    driver: bridge

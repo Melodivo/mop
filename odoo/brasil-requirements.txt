@@ -1,0 +1,23 @@
+# odoo-brasil
+suds-jurko-requests
+xmlsec
+pytrustnfe3
+pysigep
+signxml==2.9.0
+python3-cnab
+python3-boleto
+pycnab240
+python-sped
+formio-data==0.4.5
+
+# trustcode-addons
+urllib3==1.22
+# pyopenssl==19.0.0
+iugu-trustcode
+
+# Atualizacao
+click-odoo-contrib
+
+# Sentry
+sentry-sdk
+raven

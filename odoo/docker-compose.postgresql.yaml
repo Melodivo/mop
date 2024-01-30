@@ -1,0 +1,15 @@
+version: '3.9'
+services:
+  postgres:
+    container_name: postgres13
+    image: postgres:13
+    build:
+      context: ./postgresql
+      dockerfile: Dockerfile.postgresql
+      target: build-postgresql
+    env_file:
+      - pg_env
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"       

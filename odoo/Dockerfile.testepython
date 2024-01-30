@@ -1,0 +1,29 @@
+# syntax=docker/dockerfile:1.4
+
+FROM ubuntu:20.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+## Instala python-3.8 ##
+
+WORKDIR /opt
+
+RUN echo "#!/bin/bash\nexit 0" > /usr/sbin/policy-rc.d \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+#    python3.8 \
+    python3.8-dev \
+    python3.8-venv \
+    python3-pip \
+    curl \
+    && curl -sL https://deb.nodesource.com/setup_lts.x | bash - \
+    && apt-get install -y nodejs \
+    # && curl -L https://www.npmjs.com/install.sh | sh \
+    && npm install -g less && npm cache clean --force \
+    ## Limpa apt cache
+    && apt-get autopurge -y \
+    && apt-get autoremove -y \
+    && apt-get autoclean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* 
+
+CMD [ "bash" ]

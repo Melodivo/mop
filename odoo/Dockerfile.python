@@ -1,0 +1,126 @@
+# syntax=docker/dockerfile:1.4
+
+FROM ubuntu@sha256:b2339eee806d44d6a8adc0a790f824fb71f03366dd754d400316ae5a7e3ece3e AS build-odoo
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+## Instala python-3.9.13 ##
+
+WORKDIR /opt
+
+RUN echo "#!/bin/bash\nexit 0" > /usr/sbin/policy-rc.d \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+    python3.8 \
+    python3.8-dev \
+    python3.8-venv \
+    python3-pip \
+    libxml2-dev \
+    libxslt1-dev \
+    libevent-dev \
+    libsasl2-dev \
+    libldap2-dev \
+    libpq-dev \
+    libjpeg-dev \
+    libtiff5-dev \
+    libjpeg8-dev \
+    libopenjp2-7-dev \
+    zlib1g-dev \
+    libfreetype6-dev \
+    liblcms2-dev \
+    libwebp-dev \
+    libharfbuzz-dev \
+    libfribidi-dev \
+    libxcb1-dev \
+    build-essential \
+## Ferramentas ##
+    gcc \
+    g++ \
+    unzip \
+    curl \
+    gettext-base \
+#    locales \
+#    supervisor \
+#    git
+#    openssh-client \ 
+## Dependências da Localização Brasileira ##
+    libssl-dev \
+    libxmlsec1-dev \
+    python-openssl \
+    python-cffi \
+## limpa intalação dependências apt ##
+    && apt-get autopurge -y \
+    && apt-get autoremove -y \
+    && apt-get autoclean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* 
+## Cria usuário e define ambiente virtual
+RUN groupadd --gid 1000 odoo \
+    && useradd -md /odoo -r -s /bin/bash --uid 1000 odoo -g 1000 \
+    && chown -R odoo.odoo /odoo/
+USER odoo
+WORKDIR /odoo
+ENV VIRTUAL_ENV=/odoo/venv
+RUN python3 -m venv ${VIRTUAL_ENV}
+ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
+# RUN pip install --upgrade pip==21.2.4 \
+RUN python3 -m ensurepip \
+    # && pip install --no-cache-dir setuptools==58.0.0 \
+    && pip install wheel
+COPY ./pip-requirements-odoo-14.txt brasil-requirements.txt ./
+RUN pip install --no-cache-dir -r pip-requirements-odoo-14.txt \
+    && pip install --no-cache-dir -r brasil-requirements.txt 
+#    && pip install pyopenssl==20.0.1
+    # && find -name '*.pyc' -type f -delete
+## build runner-image ##
+FROM ubuntu@sha256:b2339eee806d44d6a8adc0a790f824fb71f03366dd754d400316ae5a7e3ece3e AS runner-odoo
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV LC_ALL=pt_BR.UTF-8
+WORKDIR /opt
+
+## Avoid ERROR: invoke-rc.d: policy-rc.d deined execution of start ##
+
+RUN echo "#!/bin/bash\nexit 0" > /usr/sbin/policy-rc.d \
+    && apt-get update && apt-get install -yqq --no-install-recommends \
+    python3.8 \
+    python3.8-venv \
+    python3-pip \
+    wget \
+    publicsuffix \
+    ca-certificates \
+    locales \
+    gnupg1 \
+    gnupg2 \
+    gettext-base \
+    && locale-gen en_US en_US.UTF-8 pt_BR pt_BR.UTF-8 \
+    && dpkg-reconfigure locales \ 
+## Instala postgrsql-client-13 ##
+    && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt/ focal"-pgdg main | tee  /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update && apt-get install -y --no-install-recommends postgresql-client-13 \
+    && wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb \
+    && apt-get install -y --no-install-recommends ./wkhtmltox_0.12.6-1.focal_amd64.deb \
+## Limpa instalação Python-3.8 ##
+    && rm -rf /opt/*.* \
+    && apt-get autopurge -y \
+    && apt-get autoremove -y \
+    && apt-get autoclean \
+    && rm -rf /var/lib/apt/lists/* /tmp/*
+
+## Instala dependencias-apt ##
+
+    # node-less \
+    # node-clean-css \
+## Cria usuário e define ambiente virtual
+# ENV LANG C.UTF-8
+RUN groupadd --gid 1000 odoo \
+    && useradd -md /odoo -r -s /bin/bash --uid 1000 odoo -g 1000 \
+    && chown -R odoo.odoo /odoo/
+USER odoo
+WORKDIR /odoo
+ENV VIRTUAL_ENV=/odoo/venv
+RUN python3 -m venv ${VIRTUAL_ENV}
+ENV PATH="${VIRTUAL_ENV}/bin:$PATH"      
+COPY --from=build-odoo ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+RUN pip install pyopenssl==20.0.1 \
+    && pip install signxml==2.9.0

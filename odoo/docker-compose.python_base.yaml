@@ -1,0 +1,38 @@
+version: '3.9'
+services:
+  odoo:
+    stdin_open: true
+    tty: true
+    container_name: odoo14-oca
+    image: melodivo/docker-odoobase-oca:14.0
+    build:
+      context: .
+      dockerfile: Dockerfile.teste-oca14
+      target: run-odoo
+    networks:
+      - odoo_net
+    ports:
+      - "8069:8069"
+    depends_on:
+      - postgres-oca14
+    env_file:
+      - odoo.env
+    volumes:
+      - ./14oca/filestore:/odoo/filestore:rw
+      - ./14oca/src:/odoo/src/:rw
+      - ./14oca/conf:/odoo/conf:rw
+      - ./14oca/logs:/odoo/logs:rw
+  postgres-oca14:
+    container_name: postgres-oca14
+    image: postgres:13
+    env_file:
+      - pg_env
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - odoo_net
+networks:
+  odoo_net:
+    driver: bridge

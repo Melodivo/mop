@@ -1,0 +1,57 @@
+# cryptography<23.2.0
+# generated from manifests external_dependencies
+# nfselib.barueri
+# nfselib.ginfes
+# nfselib.paulistana
+acme
+astor
+bokeh==2.3.1
+brazilcep
+contextvars; python_version < '3.7'
+cryptography
+dataclasses
+dicttoxml
+dnspython
+email-validator
+endesive
+erpbrasil.assinatura>=1.7.0
+erpbrasil.base>=2.3.0
+erpbrasil.edoc.pdf
+erpbrasil.edoc>=2.5.2
+erpbrasil.transmissao>=1.1.0
+fdfgen
+josepy
+lxml
+mpld3
+nfelib>=2.0.0
+num2words
+numpy-financial<=1.0.0
+numpy>=1.15
+odoo-test-helper  # Needed by spec_driven_model
+odoorpc
+openpyxl
+openupgradelib
+pdf2image
+phonenumbers
+plotly==5.4.0
+py3o.formats
+py3o.template
+pygount
+PyPDF2==1.28.6
+pysftp
+python-dateutil
+pyyaml
+pyzbar
+requests
+roulier
+satcomum
+sentry_sdk<=1.9.0
+signxml<3.1.0
+unidecode
+unidecode
+vcrpy  # Needed by payment_pagseguro
+workalendar
+xlrd
+xmldiff
+xmltodict
+zeep
